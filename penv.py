@@ -1,56 +1,47 @@
 #!/usr/bin/env python
-
-import subprocess
-import os
-import sys
-from pathlib import Path
+from utils.argumenter import parse_args
+from command.commander import Commander
+from command.actions import Action
 
 
-class Main():
+class Penv(object):
     """
     Main Class
     """
+    def __init__(self, args):
+        self.args = args
+        self.commander = Commander(args.action, args.name, args.python_path)
 
-    def __init__(self):
-        self.dirpath = os.getcwd()
-        self.folder_name = os.path.basename(self.dirpath)
-        self.create_venv = 'virtualenv ' + self.folder_name
-        # TODO refatoring
-        self.home_dir = str(Path.home())
-        self.venv_dir = self.home_dir + "/.local/share/virtualenvs/"
+    def start(self):
+        import pdb; pdb.set_trace()
+        answer = None
+        if not hasattr(Action(self.commander.venv_name, self.commander.shell), self.args.action):
+            print(f'Action {self.args.action} is invalid! Check help command.')
+            self.commander.shell.kill()
+            exit(1)
 
-        try:
-            subprocess.call(['virtualenv'])
-            # continue the code below
-        except FileNotFoundError:
-            resp = input(str('virtualenv not installed, install? [y/n]'))
-            if resp == 'y' or resp == 'Y':
-                # maybe this is not the best way to do that,
-                # but we need the virtualenv on main interpreter,
-                # send me a pull request if you now a best way thx.
-                os.system('sudo pip install virtualenv')
+        self.commander.check_pip()
+        self.commander.check_virtualenv_binary()
+
+        if not self.commander.check_dir():
+            while answer != 'y' and answer != 'n':
+                answer = input(
+                    f"No virtual environment named {self.commander.venv_name} was found in your venv directories.\
+                     Wanna create one? [y/n]"
+                )
+
+            if answer == 'y':
+                self.commander.action = 'create'
+                self.commander.invoke_action()
+                self.commander.action = self.args.action
+                self.commander.invoke_action()
             else:
-                exit()
+                print("Refused to create a virtual environment. Exiting...")
+                exit(1)
 
-    def check_dir(self):
-        self.venv_name = self.venv_dir + self.folder_name + '_venv'
-
-        if os.path.exists(self.venv_dir):
-            if os.path.exists(self.venv_name):
-                self.activate_venv = "source " + self.venv_name + "/bin/activate"
-                os.system(self.activate_venv)
-                # TODO verify if requirements is update
-
-            else:
-                response = input('This project dont have an virtualenvironment create? [Y/n]')
-                print(response)
-                print('creating a virtualenv')
-                os.system('virtualenv ' + self.venv_name)
-                print('verify if exists requirements.txt')
-        else:
-            print('Dir virtualenv on {} not exists, creating...'.format(self.venv_dir))
-            os.makedirs(self.venv_dir)
-            return self.check_dir()
+        self.commander.invoke_action()
 
 
-Main()
+if __name__ == '__main__':
+    penv = Penv(parse_args())
+    penv.start()
