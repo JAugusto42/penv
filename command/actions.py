@@ -44,4 +44,4 @@ class Action:
         """
         Fallback function for unavailable
         """
-        print('No action required in the moment.')
+        print('No action required at the moment.')
