@@ -22,7 +22,7 @@ class Commander(object):
         except subprocess.CalledProcessError:
             self.install_virtualenv()
             if subprocess.run(['virtualenv', '-h']).returncode:
-                raise Exception('A pretty serious problem occurred and virtualenv wasn\'t installed.')
+                raise OSError('A pretty serious problem occurred and virtualenv wasn\'t installed.')
 
     def install_virtualenv(self):
         try:
